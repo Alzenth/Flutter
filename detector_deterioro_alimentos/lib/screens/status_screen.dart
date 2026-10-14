@@ -1,11 +1,18 @@
 import 'package:flutter/material.dart';
+import '../services/sensor_service.dart';
 import '../widgets/gauge_painter.dart';
 
 class StatusScreen extends StatelessWidget {
-  const StatusScreen({super.key});
+  final AppState appState;
+
+  const StatusScreen({super.key, required this.appState});
 
   @override
   Widget build(BuildContext context) {
+    final data = appState.currentData;
+    final isStatic = appState.useStaticData;
+    final isConnected = appState.isConnected;
+
     return Padding(
       padding: const EdgeInsets.all(16.0),
       child: Column(
@@ -14,9 +21,34 @@ class StatusScreen extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
-                'Detector Inteligente\nde Alimentos',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Detector Inteligente',
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  ),
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.circle,
+                        size: 10,
+                        color: isStatic
+                            ? Colors.blue
+                            : (isConnected ? Colors.green : Colors.red),
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        isStatic
+                            ? 'Modo Estático (Testing)'
+                            : (isConnected
+                                ? 'Conectado a ESP32 (${appState.esp32Ip})'
+                                : 'Desconectado de ESP32'),
+                        style: const TextStyle(fontSize: 12, color: Colors.grey),
+                      ),
+                    ],
+                  ),
+                ],
               ),
               IconButton(
                 icon: const Icon(Icons.account_circle, size: 32),
@@ -39,29 +71,31 @@ class StatusScreen extends StatelessWidget {
                   height: 150,
                   width: double.infinity,
                   child: CustomPaint(
-                    painter: GaugePainter(value: 0.65),
-                    child: const Center(
+                    painter: GaugePainter(value: data.gasPpm / 1000.0),
+                    child: Center(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          SizedBox(height: 20),
+                          const SizedBox(height: 20),
                           Text(
-                            'ESTADO:\nCRÍTICO',
+                            'ESTADO:\n${data.estado}',
                             textAlign: TextAlign.center,
                             style: TextStyle(
-                              color: Color(0xFFE74C3C),
+                              color: data.estado == 'CRÍTICO'
+                                  ? const Color(0xFFE74C3C)
+                                  : const Color(0xFF2ECC71),
                               fontWeight: FontWeight.bold,
                               fontSize: 12,
                             ),
                           ),
                           Text(
-                            '650 ppm',
-                            style: TextStyle(
+                            '${data.gasPpm.toInt()} ppm',
+                            style: const TextStyle(
                               fontSize: 26,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
-                          Text(
+                          const Text(
                             'COV Gas',
                             style: TextStyle(color: Colors.grey, fontSize: 12),
                           ),
@@ -72,7 +106,8 @@ class StatusScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 10),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
                     color: Colors.black26,
                     borderRadius: BorderRadius.circular(8),
@@ -96,7 +131,7 @@ class StatusScreen extends StatelessWidget {
               Expanded(
                 child: _buildMetricCard(
                   title: 'Temperatura:',
-                  value: '25.1 °C',
+                  value: '${data.temperatura.toStringAsFixed(1)} °C',
                   icon: Icons.thermostat,
                   color: const Color(0xFFD35400),
                 ),
@@ -105,7 +140,7 @@ class StatusScreen extends StatelessWidget {
               Expanded(
                 child: _buildMetricCard(
                   title: 'Humedad:',
-                  value: '74%',
+                  value: '${data.humedad.toInt()}%',
                   icon: Icons.water_drop,
                   color: const Color(0xFF2980B9),
                 ),
@@ -113,27 +148,41 @@ class StatusScreen extends StatelessWidget {
             ],
           ),
           const Spacer(),
-          // Banner de Alerta Crítica
+          // Banner de Alerta
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: const Color(0xFF5C1D24),
+              color: data.estado == 'CRÍTICO'
+                  ? const Color(0xFF5C1D24)
+                  : const Color(0xFF1E3A2B),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: const Color(0xFFE74C3C)),
+              border: Border.all(
+                color: data.estado == 'CRÍTICO'
+                    ? const Color(0xFFE74C3C)
+                    : const Color(0xFF2ECC71),
+              ),
             ),
-            child: const Row(
+            child: Row(
               children: [
-                Icon(Icons.warning_amber_rounded, color: Color(0xFFE74C3C)),
-                SizedBox(width: 12),
+                Icon(
+                  data.estado == 'CRÍTICO'
+                      ? Icons.warning_amber_rounded
+                      : Icons.check_circle_outline,
+                  color: data.estado == 'CRÍTICO'
+                      ? const Color(0xFFE74C3C)
+                      : const Color(0xFF2ECC71),
+                ),
+                const SizedBox(width: 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'ALERTA: Carne en descomposición',
-                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                        data.alertaMensaje,
+                        style: const TextStyle(
+                            fontWeight: FontWeight.bold, fontSize: 13),
                       ),
-                      Text(
+                      const Text(
                         'Telegram/Cloud sync',
                         style: TextStyle(color: Colors.grey, fontSize: 11),
                       ),

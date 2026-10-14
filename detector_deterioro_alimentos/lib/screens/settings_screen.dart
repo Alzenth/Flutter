@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import '../services/sensor_service.dart';
 
 class SettingsScreen extends StatefulWidget {
-  const SettingsScreen({super.key});
+  final AppState appState;
+
+  const SettingsScreen({super.key, required this.appState});
 
   @override
   State<SettingsScreen> createState() => _SettingsScreenState();
@@ -13,7 +16,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _telegramNotif = true;
   bool _appPushNotif = false;
   bool _flashEsp32 = true;
-  bool _useStaticData = true; // <-- Control de modo testing/datos estáticos
 
   @override
   Widget build(BuildContext context) {
@@ -28,7 +30,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ),
         const SizedBox(height: 16),
         _buildSectionHeader('Conectividad'),
-        _buildListTile('Wi-Fi', 'Conectado', Icons.wifi, Colors.green),
+        _buildListTile(
+          'IP del ESP32',
+          widget.appState.esp32Ip,
+          Icons.wifi,
+          Colors.green,
+          onTap: () => _showIpDialog(context),
+        ),
         _buildListTile('MQTT broker', 'Estado de conectividad', Icons.rss_feed, Colors.grey),
         const SizedBox(height: 16),
         _buildSectionHeader('Umbrales de Alerta'),
@@ -46,36 +54,56 @@ class _SettingsScreenState extends State<SettingsScreen> {
         _buildSectionHeader('Hardware'),
         _buildSwitchTile('Flash ESP32-CAM', _flashEsp32, (v) => setState(() => _flashEsp32 = v)),
         const SizedBox(height: 16),
-        
-        // --- NUEVA SECCIÓN: TESTING ---
         _buildSectionHeader('Testing'),
         _buildSwitchTile(
           'Visualización con datos estáticos',
-          _useStaticData,
-          (v) => setState(() => _useStaticData = v),
+          widget.appState.useStaticData,
+          (v) => widget.appState.setUseStaticData(v),
         ),
       ],
+    );
+  }
+
+  void _showIpDialog(BuildContext context) {
+    final controller = TextEditingController(text: widget.appState.esp32Ip);
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Configurar IP del ESP32'),
+        content: TextField(
+          controller: controller,
+          decoration: const InputDecoration(hintText: 'Ejemplo: 192.168.1.50'),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancelar'),
+          ),
+          TextButton(
+            onPressed: () {
+              widget.appState.setEsp32Ip(controller.text.trim());
+              Navigator.pop(context);
+            },
+            child: const Text('Guardar'),
+          ),
+        ],
+      ),
     );
   }
 
   Widget _buildSectionHeader(String title) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Text(
-        title,
-        style: const TextStyle(color: Colors.grey, fontWeight: FontWeight.bold),
-      ),
+      child: Text(title, style: const TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)),
     );
   }
 
-  Widget _buildListTile(String title, String subtitle, IconData icon, Color color) {
+  Widget _buildListTile(String title, String subtitle, IconData icon, Color color, {VoidCallback? onTap}) {
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
-      decoration: BoxDecoration(
-        color: const Color(0xFF1E2630),
-        borderRadius: BorderRadius.circular(12),
-      ),
+      decoration: BoxDecoration(color: const Color(0xFF1E2630), borderRadius: BorderRadius.circular(12)),
       child: ListTile(
+        onTap: onTap,
         leading: Icon(icon, color: color),
         title: Text(title, style: const TextStyle(fontSize: 14)),
         subtitle: Text(subtitle, style: const TextStyle(fontSize: 12, color: Colors.grey)),
@@ -87,10 +115,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: const Color(0xFF1E2630),
-        borderRadius: BorderRadius.circular(12),
-      ),
+      decoration: BoxDecoration(color: const Color(0xFF1E2630), borderRadius: BorderRadius.circular(12)),
       child: Column(
         children: [
           Row(
@@ -115,10 +140,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget _buildSwitchTile(String title, bool value, ValueChanged<bool> onChanged) {
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
-      decoration: BoxDecoration(
-        color: const Color(0xFF1E2630),
-        borderRadius: BorderRadius.circular(12),
-      ),
+      decoration: BoxDecoration(color: const Color(0xFF1E2630), borderRadius: BorderRadius.circular(12)),
       child: SwitchListTile(
         title: Text(title, style: const TextStyle(fontSize: 14)),
         value: value,
