@@ -41,12 +41,14 @@ class SensorData {
 
 class AppState extends ChangeNotifier {
   bool _useStaticData = true;
-  String _esp32Ip = '192.168.1.50'; // IP por defecto del ESP32
+  bool _isDarkMode = true; // <-- Control del tema claro / oscuro
+  String _esp32Ip = '192.168.1.50'; 
   SensorData _currentData = SensorData.fromMock();
   bool _isConnected = true;
   Timer? _timer;
 
   bool get useStaticData => _useStaticData;
+  bool get isDarkMode => _isDarkMode; // Getter para el tema
   SensorData get currentData => _currentData;
   bool get isConnected => _isConnected;
   String get esp32Ip => _esp32Ip;
@@ -55,13 +57,17 @@ class AppState extends ChangeNotifier {
     _startPolling();
   }
 
+  void setIsDarkMode(bool value) {
+    _isDarkMode = value;
+    notifyListeners();
+  }
+
   void setUseStaticData(bool value) {
     _useStaticData = value;
     if (_useStaticData) {
       _currentData = SensorData.fromMock();
       _isConnected = true;
     } else {
-      // Limpia inmediatamente la pantalla de datos estáticos
       _currentData = SensorData(
         gasPpm: 0.0,
         temperatura: 0.0,

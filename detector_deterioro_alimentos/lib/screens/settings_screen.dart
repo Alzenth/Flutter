@@ -19,6 +19,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final cardColor = Theme.of(context).cardColor;
+
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
@@ -35,29 +37,43 @@ class _SettingsScreenState extends State<SettingsScreen> {
           widget.appState.esp32Ip,
           Icons.wifi,
           Colors.green,
+          cardColor,
           onTap: () => _showIpDialog(context),
         ),
-        _buildListTile('MQTT broker', 'Estado de conectividad', Icons.rss_feed, Colors.grey),
+        _buildListTile('MQTT broker', 'Estado de conectividad', Icons.rss_feed, Colors.grey, cardColor),
         const SizedBox(height: 16),
         _buildSectionHeader('Umbrales de Alerta'),
-        _buildSliderTile('Gas (COV)', '${_gasThreshold.toInt()} ppm', _gasThreshold, 100, 800, (v) {
+        _buildSliderTile('Gas (COV)', '${_gasThreshold.toInt()} ppm', _gasThreshold, 100, 800, cardColor, (v) {
           setState(() => _gasThreshold = v);
         }),
-        _buildSliderTile('Temperatura', '${_tempThreshold.toInt()} °C', _tempThreshold, 10, 40, (v) {
+        _buildSliderTile('Temperatura', '${_tempThreshold.toInt()} °C', _tempThreshold, 10, 40, cardColor, (v) {
           setState(() => _tempThreshold = v);
         }),
         const SizedBox(height: 16),
         _buildSectionHeader('Notificaciones'),
-        _buildSwitchTile('Telegram', _telegramNotif, (v) => setState(() => _telegramNotif = v)),
-        _buildSwitchTile('App Push', _appPushNotif, (v) => setState(() => _appPushNotif = v)),
+        _buildSwitchTile('Telegram', _telegramNotif, cardColor, (v) => setState(() => _telegramNotif = v)),
+        _buildSwitchTile('App Push', _appPushNotif, cardColor, (v) => setState(() => _appPushNotif = v)),
         const SizedBox(height: 16),
         _buildSectionHeader('Hardware'),
-        _buildSwitchTile('Flash ESP32-CAM', _flashEsp32, (v) => setState(() => _flashEsp32 = v)),
+        _buildSwitchTile('Flash ESP32-CAM', _flashEsp32, cardColor, (v) => setState(() => _flashEsp32 = v)),
         const SizedBox(height: 16),
+
+        // --- SECCIÓN: PERSONALIZACIÓN ---
+        _buildSectionHeader('Personalización'),
+        _buildSwitchTile(
+          'Tema Oscuro',
+          widget.appState.isDarkMode,
+          cardColor,
+          (v) => widget.appState.setIsDarkMode(v),
+        ),
+        const SizedBox(height: 16),
+
+        // --- SECCIÓN: TESTING ---
         _buildSectionHeader('Testing'),
         _buildSwitchTile(
           'Visualización con datos estáticos',
           widget.appState.useStaticData,
+          cardColor,
           (v) => widget.appState.setUseStaticData(v),
         ),
       ],
@@ -98,10 +114,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _buildListTile(String title, String subtitle, IconData icon, Color color, {VoidCallback? onTap}) {
+  Widget _buildListTile(String title, String subtitle, IconData icon, Color color, Color cardColor, {VoidCallback? onTap}) {
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
-      decoration: BoxDecoration(color: const Color(0xFF1E2630), borderRadius: BorderRadius.circular(12)),
+      decoration: BoxDecoration(color: cardColor, borderRadius: BorderRadius.circular(12)),
       child: ListTile(
         onTap: onTap,
         leading: Icon(icon, color: color),
@@ -111,11 +127,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _buildSliderTile(String title, String valueStr, double value, double min, double max, ValueChanged<double> onChanged) {
+  Widget _buildSliderTile(String title, String valueStr, double value, double min, double max, Color cardColor, ValueChanged<double> onChanged) {
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(color: const Color(0xFF1E2630), borderRadius: BorderRadius.circular(12)),
+      decoration: BoxDecoration(color: cardColor, borderRadius: BorderRadius.circular(12)),
       child: Column(
         children: [
           Row(
@@ -137,10 +153,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _buildSwitchTile(String title, bool value, ValueChanged<bool> onChanged) {
+  Widget _buildSwitchTile(String title, bool value, Color cardColor, ValueChanged<bool> onChanged) {
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
-      decoration: BoxDecoration(color: const Color(0xFF1E2630), borderRadius: BorderRadius.circular(12)),
+      decoration: BoxDecoration(color: cardColor, borderRadius: BorderRadius.circular(12)),
       child: SwitchListTile(
         title: Text(title, style: const TextStyle(fontSize: 14)),
         value: value,
